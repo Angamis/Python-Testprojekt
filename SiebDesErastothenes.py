@@ -95,12 +95,11 @@ def set_parameters(list):
 
     return(box_size, font_size_below_100, font_size, x_box_to_box, number_of_horizontal_tiles)
 
-screen.fill(color_brown)
 
 #main loop
 while True:
 
-    #screen.fill(color_brown)
+    screen.fill(color_brown)
     mouse = pygame.mouse.get_pos()
 
     #catch all events here
@@ -130,30 +129,24 @@ while True:
 
 
 
+    #create grid of all numbers up to maximum entered    
+    for numbers in numbers_list:
 
+#            x_calling = numbers * 10boxsize+spacing - (10boxsize+spacing-10) - math.floor((numbers - 1) / horizontaltiles) * horizontaltiles*(10boxsize+spacing)
+#            y_calling = 100 + math.floor((numbers - 1) / horizontaltiles) * 10boxsize+spacing
 
+        x_calling = (numbers-1) * x_box_to_box + 10 - math.floor((numbers-1)/number_of_horizontal_tiles) * number_of_horizontal_tiles * x_box_to_box
+        y_calling = 100 + math.floor((numbers-1) / number_of_horizontal_tiles) * x_box_to_box
 
-    if is_initialized == FALSE:
-        #create grid of all numbers up to maximum entered    
-        for numbers in numbers_list:
+        if 1 < numbers < 100:
+            create_box(x_calling, y_calling, numbers, color_cyan, box_size, font_size_below_100)
+        else:
+            create_box(x_calling, y_calling, numbers, color_cyan, box_size, font_size)
 
-    #            x_calling = numbers * 10boxsize+spacing - (10boxsize+spacing-10) - math.floor((numbers - 1) / horizontaltiles) * horizontaltiles*(10boxsize+spacing)
-    #            y_calling = 100 + math.floor((numbers - 1) / horizontaltiles) * 10boxsize+spacing
-
-            x_calling = (numbers-1) * x_box_to_box + 10 - math.floor((numbers-1)/number_of_horizontal_tiles) * number_of_horizontal_tiles * x_box_to_box
-            y_calling = 100 + math.floor((numbers-1) / number_of_horizontal_tiles) * x_box_to_box
-
-            if 1 < numbers < 100:
-                create_box(x_calling, y_calling, numbers, color_cyan, box_size, font_size_below_100)
-            else:
-                create_box(x_calling, y_calling, numbers, color_cyan, box_size, font_size)
-
-            #initial box, empty, without ifelse!!!!
-            if numbers == 1:
-                create_box(10, 100, "", color_cyan, box_size, 1)
-        pygame.display.update()
-        is_initialized = TRUE
-            
+        #initial box, empty, without ifelse!!!!
+        if numbers == 1:
+            create_box(10, 100, "", color_cyan, box_size, 1)
+        
 
 
     #drawing of the 'QUIT' button
