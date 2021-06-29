@@ -12,7 +12,7 @@ pygame.init()
 screen = pygame.display.set_mode((1200, 800))
 
 #Title and Icon
-pygame.display.set_caption("Sieb des Erastothenes")
+pygame.display.set_caption("Sieb des Eratosthenes")
 icon = pygame.image.load('sieve.png')
 pygame.display.set_icon(icon)
 
@@ -40,17 +40,16 @@ tinyfont = pygame.font.SysFont('Corbel', 10)
 #definitions of text
 text_quit = smallfont.render('QUIT' , True , color_black)
 text_entry = smallfont.render('Entry' , True , color_black)
+text_start = smallfont.render('Start', True, color_black)
 
-#variables
+#global variables
 numbers_list = []
 box_size = 3
 font_size_below_100 = 21
 font_size = 21 
-x_calling = 0
-y_calling = 0
 x_box_to_box = 10
 number_of_horizontal_tiles = 10
-is_initialized = FALSE
+
 
 #FUNCTIONS
 #input dialog
@@ -58,9 +57,9 @@ def int_input():
     return simpledialog.askinteger(title="Limit", prompt="Wähle bis zu welcher positiven Zahl gerechnet werden soll:")
 
 #create numbered boxes
-def create_box(x_coord, y_coord, text_number, color, size, fontsize):
-    pygame.draw.rect(screen, color, [x_coord, y_coord, 10*size, 10*size])
-    screen.blit(pygame.font.SysFont('Times', fontsize).render(str(text_number), True, color_black), (x_coord + 2 + size, y_coord + 2 + size)) 
+def create_box(surface, x_coord, y_coord, text_number, color, size, fontsize):
+    pygame.draw.rect(surface, color, [x_coord, y_coord, 10*size, 10*size])
+    surface.blit(pygame.font.SysFont('Times', fontsize).render(str(text_number), True, color_black), (x_coord + 2 + size, y_coord + 2 + size)) 
 
 #fill a list from 1 to n with ascending numbers
 def fill_list(list, n):
@@ -68,6 +67,7 @@ def fill_list(list, n):
     list.extend(range(1, n+1))
     return list
 
+#prepare all parameters for create_box()
 def set_parameters(list):
     if len(list) < 171:
         box_size = 5
@@ -87,13 +87,53 @@ def set_parameters(list):
         font_size = 6
     elif len(list) < 4251:
         box_size = 1
-        font_size_below_100 = 0
-        font_size = 0
+        font_size_below_100 = 10
+        font_size = 6
+    elif len(list) < 17001:
+        box_size = 0.5
+        font_size_below_100 = 10
+        font_size = 6
+
 
     x_box_to_box = 14*box_size
     number_of_horizontal_tiles = math.floor(1190/x_box_to_box)
 
     return(box_size, font_size_below_100, font_size, x_box_to_box, number_of_horizontal_tiles)
+
+#prepare a Surface with all drawn rectangels
+def create_boxes():
+
+    surf = pygame.Surface((1200, 800))
+    surf.fill(color_brown)
+
+    #creates all boxes up to the highest value that got entered by user, above 1050, no text will be drawn
+    if len(numbers_list) < 1051:   
+        for numbers in numbers_list:
+
+            x_calling = (numbers-1) * x_box_to_box + 10 - math.floor((numbers-1)/number_of_horizontal_tiles) * number_of_horizontal_tiles * x_box_to_box
+            y_calling = 100 + math.floor((numbers-1) / number_of_horizontal_tiles) * x_box_to_box
+
+            if 1 < numbers < 100:
+                create_box(surf, x_calling, y_calling, numbers, color_cyan, box_size, font_size_below_100)
+            else:
+                create_box(surf, x_calling, y_calling, numbers, color_cyan, box_size, font_size)
+
+            #initial box, empty
+            if numbers == 1:
+                create_box(surf, 10, 100, "", color_cyan, box_size, 1)
+    else:
+        for numbers in numbers_list:
+
+            x_calling = (numbers-1) * x_box_to_box + 10 - math.floor((numbers-1)/number_of_horizontal_tiles) * number_of_horizontal_tiles * x_box_to_box
+            y_calling = 100 + math.floor((numbers-1) / number_of_horizontal_tiles) * x_box_to_box
+
+            if 0 < numbers < 100:
+                create_box(surf, x_calling, y_calling, "", color_cyan, box_size, font_size_below_100)
+            else:
+                create_box(surf, x_calling, y_calling, "", color_cyan, box_size, font_size)
+
+    return surf
+
 
 
 #main loop
@@ -115,38 +155,53 @@ while True:
                 if result == True:
                     pygame.quit()
 
-            #gets the max number for the sieve
-            if 90 <= mouse [0] <=160 and 10 <= mouse[1] <= 40:
+            #gets the max number for the sieve (Entry button)
+            if 90 <= mouse[0] <=160 and 10 <= mouse[1] <= 40:
                 highest_value = int_input()
                 if not highest_value:
                     break
-                while highest_value < 2 and highest_value > 4250:
-                    messagebox.showinfo(title="Fehler", message="Bitte eine positive ganze Zahl zwischen 2 und 4250 eingeben.")
+                while highest_value < 2 and highest_value > 17000:
+                    messagebox.showinfo(title="Fehler", message="Bitte eine positive ganze Zahl zwischen 2 und 17'000 eingeben.")
                     highest_value = int_input()
                 numbers_list = fill_list(numbers_list, highest_value)
                 #sets all parameters for the function create_box()
                 box_size, font_size_below_100, font_size, x_box_to_box, number_of_horizontal_tiles = set_parameters(numbers_list)
+                surface = create_boxes()
+
+            if 170 <= mouse[0] <= 240 and 10 <= mouse[1] <= 40 and numbers_list != []:
+
+                x_calling = 10
+                y_calling = 100
+                create_box(surface, x_calling, y_calling, "", color_red, box_size, font_size_below_100)
+                screen.blit(surface, (0, 0))
+                pygame.display.update()
+
+                prime_list = [True for i in range(highest_value+1)]
+
+                p = 2
+                while (p * p <= highest_value):
+                    if (prime_list[p] == True):
+
+                        
+                        #update all multiples of p and also animation here
+                        for i in range(p * p, highest_value + 1, p):
+
+                            x_calling = (i-1) * x_box_to_box + 10 - math.floor((i-1)/number_of_horizontal_tiles) * number_of_horizontal_tiles * x_box_to_box
+                            y_calling = 100 + math.floor((i-1) / number_of_horizontal_tiles) * x_box_to_box
+                            create_box(surface, x_calling, y_calling, "", color_purple, box_size, font_size_below_100)
+                            pygame.time.delay(50)
+                            screen.blit(surface, (0, 0))
+                            pygame.display.update()
+
+                            prime_list[i] = False
+
+                    
+                    p += 1
 
 
 
-    #create grid of all numbers up to maximum entered    
-    for numbers in numbers_list:
-
-#            x_calling = numbers * 10boxsize+spacing - (10boxsize+spacing-10) - math.floor((numbers - 1) / horizontaltiles) * horizontaltiles*(10boxsize+spacing)
-#            y_calling = 100 + math.floor((numbers - 1) / horizontaltiles) * 10boxsize+spacing
-
-        x_calling = (numbers-1) * x_box_to_box + 10 - math.floor((numbers-1)/number_of_horizontal_tiles) * number_of_horizontal_tiles * x_box_to_box
-        y_calling = 100 + math.floor((numbers-1) / number_of_horizontal_tiles) * x_box_to_box
-
-        if 1 < numbers < 100:
-            create_box(x_calling, y_calling, numbers, color_cyan, box_size, font_size_below_100)
-        else:
-            create_box(x_calling, y_calling, numbers, color_cyan, box_size, font_size)
-
-        #initial box, empty, without ifelse!!!!
-        if numbers == 1:
-            create_box(10, 100, "", color_cyan, box_size, 1)
-        
+    if numbers_list != []:    
+        screen.blit(surface, (0, 0))
 
 
     #drawing of the 'QUIT' button
@@ -163,5 +218,13 @@ while True:
         pygame.draw.rect(screen, color_cyan, [90, 10, 70, 30])     
     screen.blit(text_entry, (92, 12))    
 
+    #drawing of the 'Start' button
+    if 170 <= mouse[0] <= 240 and 10 <= mouse[1] <= 40 and numbers_list != []:
+        pygame.draw.rect(screen, color_green, [170, 10, 70, 30])
+    elif 170 <= mouse[0] <= 240 and 10 <= mouse[1] <= 40 and numbers_list == []:
+        pygame.draw.rect(screen, color_red, [170, 10, 70, 30])
+    else: 
+        pygame.draw.rect(screen, color_cyan, [170, 10, 70, 30])
+    screen.blit(text_start, (172, 12))
 
     pygame.display.update()
