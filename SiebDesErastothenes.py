@@ -1,9 +1,9 @@
-from tkinter.constants import FALSE, TRUE
 import pygame
 import math
 import tkinter as tk
 from tkinter import simpledialog
 from tkinter import messagebox
+from tkinter.constants import FALSE, TRUE
 
 #initialize pygame
 pygame.init()
@@ -50,6 +50,9 @@ font_size = 21
 x_box_to_box = 10
 number_of_horizontal_tiles = 10
 
+#global constants
+#animation is faster, the lower this value is
+ANIMATION_SPEED = 50
 
 #FUNCTIONS
 #input dialog
@@ -75,32 +78,31 @@ def set_parameters(list):
         font_size = 23
     elif len(list) < 253:
         box_size = 4
-        font_size_below_100 = 23
-        font_size = 16
+        font_size_below_100 = 25
+        font_size = 18
     elif len(list) < 449:
         box_size = 3
-        font_size_below_100 = 16
-        font_size = 10
+        font_size_below_100 = 18
+        font_size = 13
     elif len(list) < 1051:
         box_size = 2
-        font_size_below_100 = 10
-        font_size = 6
+        font_size_below_100 = 12
+        font_size = 7
     elif len(list) < 4251:
         box_size = 1
-        font_size_below_100 = 10
-        font_size = 6
+        font_size_below_100 = 12
+        font_size = 7
     elif len(list) < 17001:
         box_size = 0.5
-        font_size_below_100 = 10
-        font_size = 6
-
+        font_size_below_100 = 12
+        font_size = 7
 
     x_box_to_box = 14*box_size
     number_of_horizontal_tiles = math.floor(1190/x_box_to_box)
 
     return(box_size, font_size_below_100, font_size, x_box_to_box, number_of_horizontal_tiles)
 
-#prepare a Surface with all drawn rectangels
+#prepare a Surface with all drawn boxes, uses create_box()
 def create_boxes():
 
     surf = pygame.Surface((1200, 800))
@@ -134,8 +136,6 @@ def create_boxes():
 
     return surf
 
-
-
 #main loop
 while True:
 
@@ -155,20 +155,26 @@ while True:
                 if result == True:
                     pygame.quit()
 
-            #gets the max number for the sieve (Entry button)
+            #gets the max number for the sieve (Entry button is pressed)
             if 90 <= mouse[0] <=160 and 10 <= mouse[1] <= 40:
                 highest_value = int_input()
                 if not highest_value:
                     break
-                while highest_value < 2 and highest_value > 17000:
+                while highest_value < 2 or highest_value > 17000:
                     messagebox.showinfo(title="Fehler", message="Bitte eine positive ganze Zahl zwischen 2 und 17'000 eingeben.")
                     highest_value = int_input()
-                numbers_list = fill_list(numbers_list, highest_value)
-                #sets all parameters for the function create_box()
-                box_size, font_size_below_100, font_size, x_box_to_box, number_of_horizontal_tiles = set_parameters(numbers_list)
-                surface = create_boxes()
 
+                if 1 < highest_value <= 17000:
+                    numbers_list = fill_list(numbers_list, highest_value)
+                    #sets all parameters for the function create_box()
+                    box_size, font_size_below_100, font_size, x_box_to_box, number_of_horizontal_tiles = set_parameters(numbers_list)
+                    surface = create_boxes()
+
+            #starts the animation and claculation of the prime numbers (Start button is pressed)
             if 170 <= mouse[0] <= 240 and 10 <= mouse[1] <= 40 and numbers_list != []:
+
+                #disables all click interaction with the program
+                pygame.event.set_blocked(pygame.MOUSEBUTTONDOWN)
 
                 x_calling = 10
                 y_calling = 100
@@ -177,32 +183,67 @@ while True:
                 pygame.display.update()
 
                 prime_list = [True for i in range(highest_value+1)]
-
+                color = 0
                 p = 2
+
                 while (p * p <= highest_value):
                     if (prime_list[p] == True):
 
                         
-                        #update all multiples of p and also animation here
+                        #update all multiples of p and animate the sieve
                         for i in range(p * p, highest_value + 1, p):
 
                             x_calling = (i-1) * x_box_to_box + 10 - math.floor((i-1)/number_of_horizontal_tiles) * number_of_horizontal_tiles * x_box_to_box
                             y_calling = 100 + math.floor((i-1) / number_of_horizontal_tiles) * x_box_to_box
-                            create_box(surface, x_calling, y_calling, "", color_purple, box_size, font_size_below_100)
-                            pygame.time.delay(50)
+
+                            #color setter for all multiples of a prime
+                            if color == 0:
+                                create_box(surface, x_calling, y_calling, "", color_purple, box_size, font_size_below_100)
+                            elif color == 1:
+                                create_box(surface, x_calling, y_calling, "", color_white, box_size, font_size_below_100)
+                            elif color == 2:
+                                create_box(surface, x_calling, y_calling, "", color_blue, box_size, font_size_below_100)
+                            elif color == 3:
+                                create_box(surface, x_calling, y_calling, "", color_green, box_size, font_size_below_100)
+                            elif color == 4:
+                                create_box(surface, x_calling, y_calling, "", color_yellow, box_size, font_size_below_100)
+                            elif color == 5:
+                                create_box(surface, x_calling, y_calling, "", color_orange, box_size, font_size_below_100)
+                            else:
+                                create_box(surface, x_calling, y_calling, "", color_black, box_size, font_size_below_100)
+                                color = -1
+
+                            pygame.time.delay(ANIMATION_SPEED)
                             screen.blit(surface, (0, 0))
                             pygame.display.update()
 
                             prime_list[i] = False
 
-                    
+                    #resets color to first one if all are used
+                    if color == -1:
+                        color = 0
+                    else:
+                        color += 1
+
                     p += 1
+                
+                #makes the program clickable again
+                pygame.event.set_allowed(pygame.MOUSEBUTTONDOWN)
 
+                #enters the indices of the found primes (and therefore the primes) into a list, romoves entry 0 and 1
+                found_primes = [i for i, x in enumerate(prime_list) if x == True]
+                found_primes.pop(0)
+                found_primes.pop(0)
 
+                #prepares the element with all prime numbers separated by a comma and a space
+                comma_and_space = ", "
+                output_primes = comma_and_space.join(list(map(str, found_primes)))
 
+                messagebox.showinfo("Ihre Primzahlen:", output_primes)
+
+    #draws all boxes, if there are any present
     if numbers_list != []:    
         screen.blit(surface, (0, 0))
-
 
     #drawing of the 'QUIT' button
     if 10 <= mouse[0] <= 80 and 10 <= mouse[1] <= 40:
